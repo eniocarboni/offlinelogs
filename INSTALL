@@ -1,0 +1,46 @@
+Offlinelogs 
+
+Quick word
+==========
+
+Thanks for looking at the Beta version of Offlinelogs - It's been tested only few live repositories and and seems to be stable enough.
+
+If you do find bugs please contact me directly or fill in a bug/comment on the project's Github page: https://github.com/eniocarboni/offlinelog.
+
+I hope you'll enjoy using it.
+
+Quick Install Guide
+===================
+
+(*) EPrints 3.3+
+
+If you're running 3.3 simply use the Bazaar package which is in the epm/ folder. Upload it via [Admin] > [System Tools] > [EPrints Bazaar] > [Available] and scroll down the bottom of the page.
+
+
+(*) EPrints 3.2
+
+1- get the files from Git
+
+2- copy the files to your local archive:
+
+mkdir -p /opt/eprints3/archives/<ID>/{bin,cfg/cfg.d,cfg/plugins/EPrints/Plugin/Offline}
+
+cp bin/offline /opt/eprints3/archives/<ID>/bin/
+cp cfg/cfg.d/z_offline.pl /opt/eprints3/archives/<ID>/cfg/cfg.d/
+cp cfg/plugins/EPrints/Plugin/Offline/Handle.pm /opt/eprints3/archives/<ID>/cfg/plugins/EPrints/Plugin/Offline/
+
+3- check the configuration file in cfg/cfg.d/z_offline.pl
+
+  create the log_dir where save the offline logs. Default to /opt/eprints3/archives/<ID>/var/offline/
+  These dir must exists (it can be a symlink too)
+
+4- offline the logs (a long time for large logs as milions or tens of millions of records)
+
+  cd /opt/eprints3/archives/<id>/bin/
+  ./offline offline <id> --verbose
+
+  # if you want test for some months use can use --todate=YYYYMM as option to offline script
+  # add --nodel option to simulate the operation (so will not be deleted log records in the access table and 
+  #  will not be saved the index file. This means that the next relaunch we started from scratch)
+
+5- Monthly updates of the stats (e.g. via CRON)

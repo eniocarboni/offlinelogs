@@ -1,0 +1,48 @@
+# To read this file do:
+# $ perldoc README
+
+=head1 NAME
+
+B<Offlinelogs> - EPrints offline/online access log
+
+=head1 DESCRIPTION
+
+This module should put offline the many GB of log table access of the software eprints.
+ See http://www.eprints.org/
+ The minimum amount that can be taken offline is the month.
+ When a month is in offline mode can be put online or permanently deleted
+
+Attention: in EPrints version before or equal 3.3.7 be sure to patch EPrints::Database as in commit
+ https://github.com/eprints/eprints/commit/20a73ce081a4cad002cfa28b080ef09767d644ca
+
+=head1 SYNOPSIS
+
+ cd $EPRINT/archives/<ID>/bin
+ ./offline offline <ID> --verbose
+ ./offline online <ID> --verbose --date=<YYYYMM>
+ ./offline delete <ID> --verbose --date=<YYYYMM>
+ ./offline optimize <ID> --verbose
+ ./offline list <ID>
+
+=head1 COPYRIGHT
+
+    offlineLogs is Copyright (c) 2014 Enio Carboni - Italy
+    This file is part of Offlinelogs.
+
+    offlinelogs is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    offlinelogs is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with offline.  If not, see <http://www.gnu.org/licenses/>.
+
+=head1 SUPPORT / WARRANTY
+
+The Offlinelogs is free Open Source software. IT COMES WITHOUT WARRANTY OF ANY KIND.
+

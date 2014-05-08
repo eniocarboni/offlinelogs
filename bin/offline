@@ -1,0 +1,357 @@
+#!/usr/bin/perl -w 
+
+# The script should be installed in $EPRINTS_PATH/archives/<id>/bin
+use FindBin;
+use lib "$FindBin::Bin/../../../perl_lib";
+
+=pod
+
+=head1 NAME
+
+B<offline> - EPrints offline access tables
+
+=head1 DESCRIPTION
+
+This module should put offline the many GB of log table access of the software eprints.
+ See http://www.eprints.org/
+ The minimum amount that can be taken offline is the month.
+ When a month is in offline mode can be put online or permanently deleted
+
+Attention: for EPrints version <= 3.3.7 be sure to patch EPrints::Database as in commit
+https://github.com/eprints/eprints/commit/20a73ce081a4cad002cfa28b080ef09767d644ca
+
+I<checkBugs()> method can help you find if the version of EPrints needs to be patched
+
+Offline access dir default in config path B<variables_path> plus B</offline> or what else set in B<z_offline.pl>. 
+ This directory must be manual created before use this module.
+ In this directory will be saved each file for every table references access dataset and for every months of log plus an index file named access.index.
+
+For any changes the access.index will be first rotated and then changed. 
+ The last 20 rotated index will be stored as .access.index.<n> where <n> from 1 to 20. 
+
+This max value (20) can be modified as option of new method o setting B<max_rotate_index> in config file B<z_offline.pl>. 
+B<max_rotate_index> must be >0 or default to 20.
+
+Each log file will be named YYYYMM_<table_name>.csv.gz where YYYYMM is the year and the month of the log and <table_name> is the table's name in offline state.
+ This files are in gzip format and are .csv (comma separated file) where the separated field is <TAB>.
+ The first line are comment line (starting with #) with each field is the name of the field of the table put offline.
+
+The index file is a simple csv file where the separated field is <TAB> and the fields are:
+
+	1) YYYYMM
+	2) TOT (number of record in offline state
+	3) DOWNLOADS (downloads in YYYYMM)
+	4) VIEWS (views in YYYYMM)
+	5) ID_MIN (min id of dataset for YYYYMM)
+	6) ID_MAX (max id of dataset for YYYYMM)
+
+=head1 CONFIG FILE 
+
+B<ARCHIVEID/cfg/cfg.d/z_offline.pl>
+
+$c->{offline}= 
+  {
+        # logdir: directory (must exist) where we save the access log in offline state
+        #  if empty we use $repo->get_conf('variables_path')."/access_offline"
+        logdir          =>'',
+        # months_to_keep: are the months to keep online in access table
+        months_to_keep  =>1,
+        # Max number of rotation for the index file before any update (def. 20)
+        max_rotate_index=>20,
+	# use optimize table if DBD module is mysql and Engine is MyISAM or InnoDB
+        #  after many sql delete commands
+        # For InnoDB engine check the sql command "show global variables like 'innodb_file_per_table'"
+        #  to see that innodb_file_per_table=ON that is tablespace is for single table
+        # (def. 1)
+        optimize=>1,
+        # optimize table if Data_free > (Data_length + Index_length) * optimize_if_data_free_perc / 100
+        #  use 'show table status like <table_name>' to find data
+        #  def. 20
+        optimize_if_data_free_perc=>20,
+	# history if set operation will be saved in dataset history otherwise nothing wil be saved in history (def. 1)
+        history=>1,
+  };
+
+=head1 SYNOPSIS
+
+B<offline> I<arguments> I<repository_id> [B<options>]
+
+B<offline> offline I<repository_id> [--[no]del] [--date=<YYYYMM>|--todate=<YYYYMM>] [--[no]history] [--verbose] 
+
+B<offline> online I<repository_id> --date=<YYYYMM> [--yes] [--[no]history] [--verbose]
+
+B<offline> delete I<repository_id> [--del|--nodel] --date=<YYYYMM> [--[no]history] [--yes] [--verbose]
+
+B<offline> optimize I<repository_id> [--verbose] 
+
+B<offline> list I<repository_id> [--quiet] [--verbose] 
+
+Where I<arguments> is one of:
+
+=over 4
+
+=item offline
+
+=item online
+
+=item list
+
+=item delete
+
+=item optimize
+
+=back
+
+=head1 ARGUMENTS
+
+=over 8
+
+=item B<offline> offline
+
+Use this option to offline access tables
+
+=item B<offline> online
+
+Use this option to online saved access file
+
+=item B<offline> list
+
+Use this option to list offline access tables
+
+=item B<offline> delete
+
+Use this option to delete saved offline file. 
+Attention! So the log is deleted permanently.
+
+=item B<offline> --help
+
+Use this option to display this manual
+
+=back
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--help>
+
+Print a brief help message and exit.
+
+=item B<--man>
+
+Print the full manual page and then exit.
+
+=item B<--quiet>
+
+This option is valid only with command list to display simple test output.
+The output is YYYYMM of each offline date
+
+=item B<--verbose>
+
+Explain in detail what is going on. May be repeated for greater effect.
+
+=item B<--version>
+
+Output version information and exit.
+
+=item B<--date>
+
+use YYYYMM as fixed datestamp to offline records log with argument 'offline'
+
+or use YYYYMM as fixed datestamp to permanently delete associated file log with argument 'delete'
+
+This option is NOT an incremental option so it may change the incremental step in index file (access.index).
+Use it with attention.
+
+It is usefull when online a month and than you want offline for any reasons
+
+=item B<--todate>
+
+use YYYYMM as max limit datestamp to offline access table rather then default $repo->config->{offline}->{months_to_keep} 
+that limit datestamp to 'months_to_keep' months to keep from now.
+
+This option is an incremental option, so it operate in log record as incremental using index file (access.index)
+
+=item B<--del>
+
+Default value that is not in test mode like --nodel
+
+=item B<--nodel>
+
+use with argument offline to test only export to file and no database DELETE command (default to delete)
+
+or use with argument delete to test only.
+
+In test only the index file is not modified
+
+=item B<--yes>
+
+Don't prompt but use yes as default response
+
+=item --[no]history
+
+If --history enable write on history dataset, --nohistory disable this write. default to cfg/cfg.d/z_offline.pl
+
+=back   
+
+
+=cut
+
+use EPrints;
+use Getopt::Long;
+use Pod::Usage;
+
+use strict;
+
+our ($noise);
+my ($yyyy,$mm,$last_accessid,$months_to_keep);
+my $version = 0;
+my $verbose = 0;
+my $quiet = 0;
+my $help = 0;
+my $man = 0;
+my $logdir='';
+my $date='';
+my $todate='';
+my $del=1;
+my $yes=0;
+my $history='';
+
+# Inizio Main
+Getopt::Long::Configure("permute");
+
+GetOptions( 
+	'help|?' => \$help,
+	'man' => \$man,
+	'version' => \$version,
+	'verbose+' => \$verbose,
+	'quiet' => \$quiet,
+	'date=s'  =>\$date,
+	'todate=s'  =>\$todate,
+	'del!'=>\$del,
+	'yes'=>\$yes,
+	'history!'=>\$history,
+) || pod2usage( 1 );
+pod2usage( 1 ) if $help;
+pod2usage( -exitstatus => 0, -verbose => 2 ) if $man;
+
+if ($date && $date !~/^\d\d\d\d\d\d$/) {
+	print STDERR "--date must be YYYYMM\n";
+	pod2usage( 2 );
+}
+
+if ($todate && $todate !~/^\d\d\d\d\d\d$/) {
+	print STDERR "--todate must be YYYYMM\n";
+	pod2usage( 2 );
+}
+$noise = 1;
+$noise = 0 if( $quiet );
+$noise = 1+$verbose if( $verbose );
+
+# Set STDOUT to auto flush (without needing a \n)
+$|=1;
+
+my $action = shift @ARGV;
+my $repoid = shift @ARGV;
+#my $datasetid =shift || 'access';
+my $datasetid='access';
+pod2usage(1) unless defined $repoid;
+
+my $session = new EPrints::Session( 1 , $repoid , $noise );
+if( !defined $session )
+{
+	print STDERR "Failed to load repository: $repoid\n";
+	exit 1;
+}
+
+$noise=$verbose;
+
+
+
+my $handler = $session->plugin( "Offline::Handler", datasetid=>$datasetid, verbose => $verbose, date=>$date, todate=>$todate, test=>! $del );
+unless($handler)
+{
+        print STDERR "FATAL ERROR: Offline handler (Offline::Handler.pm) not available\n";
+        $session->terminate();
+        exit;
+}
+
+if ($handler->checkBugs() ) {
+	$session->terminate;
+	exit;
+}
+if ($history=~/^\d$/) {
+	if ($history==1) { $handler->history(1); }
+	elsif ($history==0) { $handler->history(0); }
+}
+
+if ($version) {
+	my $v='$'.ref($handler).'::VERSION';
+	print "$0 and ", ref($handler) . " version ",eval "$v" ,"\n";
+}
+elsif ($action eq "offline") {
+	$handler->offlineProcess();
+}
+elsif ($action eq "online") {
+	if (! $date) {
+		print "Need --date for online to do something\n";
+		pod2usage( 1 );
+	}
+	unless ($yes) {
+		my $ok = EPrints::Utils::get_input( '^(yes|no)$',"are you sure you want to put online the offline $date files?", "yes" );
+		unless( $ok eq "yes" )
+		{
+			$session->terminate;
+			exit;
+		}
+	}
+	$handler->onlineProcess();
+
+}
+elsif ($action eq "list") {
+	$handler->listOfflineProcess($quiet);
+}
+elsif ($action eq "delete") {
+	if (! $date) {
+		print "Need --date for delete to do something\n";
+		pod2usage( 1 );
+	}
+	unless ($yes) {
+		my $ok = EPrints::Utils::get_input( '^(yes|no)$',"are you sure you want to permanently delete $date files?", "yes" );
+		unless( $ok eq "yes" )
+		{
+			$session->terminate;
+			exit;
+		}
+	}
+	$handler->deleteProcess;
+}
+elsif ($action eq "optimize") {
+	$handler->optimizeProcess();
+}
+else { pod2usage( 1 ); }
+
+$session->terminate();
+
+
+=head1 COPYRIGHT
+
+    offline is Copyright (c) 2014 Enio Carboni - Italy
+    This file is part of Offlinelogs.
+
+    offline is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    offline is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with offline.  If not, see <http://www.gnu.org/licenses/>.
+
+=head1 SUPPORT / WARRANTY
+
+The Offlinelogs is free Open Source software. IT COMES WITHOUT WARRANTY OF ANY KIND.
