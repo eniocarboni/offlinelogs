@@ -1013,8 +1013,10 @@ sub onlineProcess
 		$z = new IO::Uncompress::Gunzip($file) or die "gunzip failed: $IO::Uncompress::Gunzip::GunzipError\n";
 		$r=<$z>; # first row is comment for names rows
 		$placeholders='';
+		my $n_el=0;
 		foreach (split(/\t/,$r)) {
 			$placeholders.='?,';
+			$n_el++;
 		}
 		$placeholders=~s/,$//; # drop last comma if exist
 		$cmd=qq|INSERT INTO |.$db->quote_identifier($t).qq| VALUES ($placeholders);|;
@@ -1029,6 +1031,12 @@ sub onlineProcess
 				$rp=~s/\\n/\n/g;
 				$rp=~s/\\r/\r/g;
 				$rp=~s/\\t/\t/g;
+				$rp=undef unless $rp;
+				$sth->bind_param($i,$rp);
+			}
+			while ( $i < $n_el) {
+				$i++;
+				$rp=undef;
 				$sth->bind_param($i,$rp);
 			}
 			$r=~s/\t/","/g;

@@ -9,15 +9,10 @@ If you do find bugs please contact me directly or fill in a bug/comment on the p
 
 I hope you'll enjoy using it.
 
-Quick Install Guide
+Install Guide
 ===================
 
-(*) EPrints 3.3+
-
-If you're running 3.3 simply use the Bazaar package which is in the epm/ folder. Upload it via [Admin] > [System Tools] > [EPrints Bazaar] > [Available] and scroll down the bottom of the page.
-
-
-(*) EPrints 3.2
+(*) EPrints 3.2+
 
 1- get the files from Git
 
@@ -43,4 +38,4 @@ cp cfg/plugins/EPrints/Plugin/Offline/Handle.pm /opt/eprints3/archives/<ID>/cfg/
   # add --nodel option to simulate the operation (so will not be deleted log records in the access table and 
   #  will not be saved the index file. This means that the next relaunch we started from scratch)
 
-5- Monthly updates of the stats (e.g. via CRON)
+5- Monthly updates of the offline records (e.g. via CRON)
