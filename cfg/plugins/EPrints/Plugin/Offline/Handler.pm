@@ -1031,7 +1031,9 @@ sub onlineProcess
 				$rp=~s/\\n/\n/g;
 				$rp=~s/\\r/\r/g;
 				$rp=~s/\\t/\t/g;
-				$rp=undef unless $rp;
+				$rp=undef if ! defined $rp;
+				$rp=undef if $rp eq '';
+				# leave "0" as is # unless $rp is wrong!!!
 				$sth->bind_param($i,$rp);
 			}
 			while ( $i < $n_el) {
